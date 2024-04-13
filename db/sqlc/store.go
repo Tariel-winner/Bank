@@ -4,20 +4,25 @@ import ( "database/sql"
 "context"
 "fmt")
 
-type Store struct {
+
+type Store interface {
+	Querier
+	TransferTx(ctx context.Context, arg TransferTxParams) (TransferTxResult, error)}
+
+type SQLStore struct {
 	*Queries
 	db *sql.DB
 }
 
 
 func NewStore(db*sql.DB)*Store{
-	return &Store{
+	return &SQLStore{
 		db:db,
 		Queries:New(db),
 	}
 }
 
-func (store*Store) execTx(ctx context.Context,fn func(*Queries)error)error {
+func (store*SQLStore) execTx(ctx context.Context,fn func(*Queries)error)error {
 	tx,err:=store.db.BeginTx(ctx,nil)
 	if err!=nil{
 		return err
@@ -48,7 +53,7 @@ type TransferTxResult struct {
 	ToEntry     Entry    `json:"to_entry"`
 }
 var txKey = struct{}{}
-func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (TransferTxResult, error) {
+func (store *SQLStore) TransferTx(ctx context.Context, arg TransferTxParams) (TransferTxResult, error) {
 	var result TransferTxResult
 	FromAccountID := sql.NullInt64{Int64: arg.FromAccountID, Valid: true}
 	ToAccountID := sql.NullInt64{Int64: arg.ToAccountID, Valid: true}
@@ -115,5 +120,5 @@ func addMoney(ctx context.Context,
 		if err != nil {
 			return 
 		}
-
+		return account1, account2, nil
 }

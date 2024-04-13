@@ -1,31 +1,36 @@
 package main
 
 import (
-    "database/sql"
-    "log"
+	"database/sql"
+	"log"
 
-    _ "github.com/lib/pq"
-     "github.com/Tariel-winner/Bank/api"
-    db "github.com/techschool/simplebank/db/sqlc"
+	"./api"
+	_ "github.com/lib/pq"
+	db "github.com/techschool/simplebank/db/sqlc"
+	"github.com/techschool/simplebank/util"
 )
 
 const (
-    dbDriver      = "postgres"
-    dbSource      = "postgresql://root:secret@localhost:5433/simple_bank?sslmode=disable"
-    serverAddress = "0.0.0.0:8080"
+	dbDriver      = "postgres"
+	dbSource      = "postgresql://root:secret@localhost:5433/simple_bank?sslmode=disable"
+	serverAddress = "0.0.0.0:8080"
 )
 
 func main() {
-    conn, err := sql.Open(dbDriver, dbSource)
-    if err != nil {
-        log.Fatal("cannot connect to db:", err)
-    }
+	config, err:=util.LoadConfig(".")
+	if err!=nil {
+		log.Fatal("cannot load config",err)
+	}
+	conn, err := sql.Open(config.DBDriver, config.DBSource)
+	if err != nil {
+		log.Fatal("cannot connect to db:", err)
+	}
 
-    store := db.NewStore(conn)
-    server := api.NewServer(store)
+	store := db.NewStore(conn)
+	server := api.NewServer(store)
 
-    err = server.Start(serverAddress)
-    if err != nil {
-        log.Fatal("cannot start server:", err)
-    }
+	err = server.Start(config.ServerAddress)
+	if err != nil {
+		log.Fatal("cannot start server:", err)
+	}
 }
